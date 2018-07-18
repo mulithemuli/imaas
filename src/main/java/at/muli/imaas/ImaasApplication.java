@@ -70,16 +70,16 @@ public class ImaasApplication {
 	 * Turns the image to the right orientation and optionally performs transformations on it.
 	 * 
 	 * @param image
-	 * @param maxHeight
-	 * @param maxWidth
+	 * @param height
+	 * @param width
 	 * @param fitTo
 	 * @return
 	 */
 	@RequestMapping(path = "transform", method = RequestMethod.POST)
 	public TransformedImage transform(@RequestBody byte[] image,
-			@RequestParam(name = "maxHeight", required = false) Integer maxHeight,
-			@RequestParam(name = "maxWidth", required = false) Integer maxWidth,
-			@RequestParam(name = "fitTo", required = false) String fitTo) {
+			@RequestParam(name = "height", required = false) Integer height,
+			@RequestParam(name = "width", required = false) Integer width,
+			@RequestParam(name = "fit_to", required = false) String fitTo) {
 		ImageMetadata imageMetadata = readMetadata(image);
 		try (ByteArrayInputStream bis = new ByteArrayInputStream(image);
 				ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
@@ -88,7 +88,8 @@ public class ImaasApplication {
 				bImage = Scalr.rotate(bImage, rotation);
 			}
 			
-			if (maxHeight != null && maxWidth != null) {
+			// TODO calculate ratio and detect other value
+			if (height != null && width != null) {
 				Scalr.Mode mode = Scalr.Mode.FIT_TO_HEIGHT;
 				if (fitTo != null) {
 					try {
@@ -97,11 +98,11 @@ public class ImaasApplication {
 						// invalid mode - stick to default
 					}
 				}
-				bImage = Scalr.resize(bImage, Scalr.Method.QUALITY, mode, maxWidth, maxHeight, Scalr.OP_ANTIALIAS);
+				bImage = Scalr.resize(bImage, Scalr.Method.QUALITY, mode, width, height, Scalr.OP_ANTIALIAS);
 			}
 			
 			ImageIO.write(bImage, SUPPORTED_IMAGE_TYPES.get(imageMetadata.contentType), byteArrayOutputStream);
-			return new TransformedImage(byteArrayOutputStream.toByteArray(), imageMetadata.contentType);
+			return new TransformedImage(byteArrayOutputStream.toByteArray(), imageMetadata.contentType, bImage.getHeight(), bImage.getWidth());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -117,16 +118,16 @@ public class ImaasApplication {
 	
 	@RequestMapping(path = "transform", method = RequestMethod.GET)
 	public ResponseEntity<byte[]> transformFromPath(@RequestParam("imagePath") String imagePath,
-			@RequestParam(name = "maxHeight", required = false) Integer maxHeight,
-			@RequestParam(name = "maxWidth", required = false) Integer maxWidth,
-			@RequestParam(name = "fitTo", required = false) String fitTo) {
+			@RequestParam(name = "height", required = false) Integer height,
+			@RequestParam(name = "width", required = false) Integer width,
+			@RequestParam(name = "fit_to", required = false) String fitTo) {
 		Path path = Paths.get(imagePath);
 		if (!Files.exists(path)) {
 			throw new NotFoundException();
 		}
 		try {
 			byte[] image = Files.readAllBytes(path);
-			TransformedImage transformedImage = transform(image, maxHeight, maxWidth, fitTo);
+			TransformedImage transformedImage = transform(image, height, width, fitTo);
 			return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.parseMediaType(transformedImage.getMediaType())).body(transformedImage.getImage());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -227,6 +228,10 @@ public class ImaasApplication {
     	private byte[] image;
     	
     	private String mediaType;
+    	
+    	private int height;
+    	
+    	private int width;
     }
     
     @AllArgsConstructor
