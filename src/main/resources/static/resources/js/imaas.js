@@ -212,7 +212,12 @@
 	let templates = {
 			exifRow: _.template('<tr><td><%-name%></td><td><%-value%></td></tr>'),
 			transformedImage: _.template('<a href="data:<%-mediaType%>;base64,<%-image%>" download="<%-name%>"><img src="data:<%-mediaType%>;base64,<%-image%>" alt="<%-name%>" /></a>'),
-			preset: _.template('<a class="dropdown-item" href="#" data-used="<%-used%>"><%-height%> x <%-width%>, fit to <%-fitToText%></a>')
+			preset: _.template('<li class="dropdown-item">\
+	<div class="btn-group w-100" role="group">\
+		<a class="btn btn-outline-secondary w-100 use" href="#" data-used="<%-used%>"><%-height%> x <%-width%>, fit to <%-fitToText%></a>\
+		<a href="#" class="btn btn-outline-danger delete"><i class="fas fa-trash-alt"></i></a>\
+	</div>\
+</li>')
 	};
 	
 	let fitToMap = {
@@ -236,8 +241,7 @@
 					lastUsed += 'never';
 				}
 				let presetSelection = $(templates.preset(v));
-				presetSelection.attr({'data-original-title': lastUsed}).tooltip();
-				presetSelection.hover(() => {
+				$('a.use', presetSelection).hover(() => {
 					height.val(v.height);
 					width.val(v.width);
 					fitTo.val(v.fitTo);
@@ -253,6 +257,13 @@
 					settings.width = v.width;
 					fitTo.val(v.fitTo);
 					settings.fitTo = v.fitTo;
+				}).attr({'data-original-title': lastUsed}).tooltip();
+				$('a.delete', presetSelection).on('click', (e) => {
+					e.preventDefault();
+					let presets = settings.presets;
+					delete presets[v.id];
+					settings.presets = presets;
+					loadPresets();
 				});
 				presetsSelection.append(presetSelection);
 			});
