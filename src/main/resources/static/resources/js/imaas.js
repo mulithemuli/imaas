@@ -7,7 +7,17 @@
 	let exifDataBody = $(document.getElementById('exif_data_body'));
 	let transformedImage = $(document.getElementById('transformed_image'));
 
-	let mode = 'upload'
+	let mode = 'upload';
+	
+	let getFilename = (url) => {
+		if (url) {
+			var m = url.toString().match(/.*\/(.+?)\./);
+			if (m && m.length > 1) {
+				return m[1];
+			}
+		}
+		return '';
+	}
 	
 	$('input[name=image_type]').on('change', (e) => {
 		switch (e.currentTarget.id) {
@@ -16,6 +26,7 @@
 			imageFileInput.parent().addClass('d-none');
 			fileUpload = null;
 			imageFileLabel.text('Choose image');
+			imageFileInput.val('');
 			mode = 'url';
 			break;
 		case 'image_type_file':
@@ -29,6 +40,7 @@
 	});
 	
 	let fileUpload;
+	let filename;
 	
 	imageFileInput.on('change', (e) => {
 		if (e.target.files.length > 0) {
@@ -38,6 +50,7 @@
 			}
 			reader.readAsArrayBuffer(e.target.files[0]);
 			imageFileLabel.text(e.target.files[0].name);
+			filename = e.target.files[0].name;
 		}
 	});
 	
@@ -58,7 +71,7 @@
 			    }
 			}).done(done);
 		} else if (mode === 'url') {
-			// read from URL ...
+			filename = getFilename(imageUrlInput.val());
 			$.get({
 				url: method,
 				data: { imagePath: imageUrlInput.val() },
@@ -72,7 +85,7 @@
 	
 	$(document.getElementById('transform_image')).on('click', () => {
 		withFilePost('transform?' + $('#height, #width, #fit_to').serialize(), (data) => {
-			transformedImage.html(templates.transformedImage(data));
+			transformedImage.html(templates.transformedImage($.extend(data, {name: filename})));
 			transformedImageModal.modal('show');
 		});
 	});
@@ -89,6 +102,6 @@
 	
 	let templates = {
 			exifRow: _.template('<tr><td><%-name%></td><td><%-value%></td></tr>'),
-			transformedImage: _.template('<img src="data:<%-mediaType%>;base64,<%-image%>" />')
+			transformedImage: _.template('<a href="data:<%-mediaType%>;base64,<%-image%>" download="<%-name%>"><img src="data:<%-mediaType%>;base64,<%-image%>" alt="<%-name%>" /></a>')
 	};
 }(jQuery));
