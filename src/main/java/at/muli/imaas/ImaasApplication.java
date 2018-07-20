@@ -88,8 +88,8 @@ public class ImaasApplication {
 				bImage = Scalr.rotate(bImage, rotation);
 			}
 			
-			// TODO calculate ratio and detect other value
-			if (height != null && width != null) {
+			Ratio ratio = new Ratio(bImage, height, width);
+			if (ratio.hasRatio()) {
 				Scalr.Mode mode = Scalr.Mode.FIT_TO_HEIGHT;
 				if (fitTo != null) {
 					try {
@@ -98,7 +98,7 @@ public class ImaasApplication {
 						// invalid mode - stick to default
 					}
 				}
-				bImage = Scalr.resize(bImage, Scalr.Method.QUALITY, mode, width, height, Scalr.OP_ANTIALIAS);
+				bImage = Scalr.resize(bImage, Scalr.Method.QUALITY, mode, ratio.getWidth(), ratio.getHeight(), Scalr.OP_ANTIALIAS);
 			}
 			
 			ImageIO.write(bImage, SUPPORTED_IMAGE_TYPES.get(imageMetadata.contentType), byteArrayOutputStream);
@@ -252,6 +252,34 @@ public class ImaasApplication {
     	private String name;
     	
     	private String value;
+    }
+    
+    @AllArgsConstructor
+    private static class Ratio {
+    	
+    	private BufferedImage image;
+    	
+    	private Integer height;
+    	
+    	private Integer width;
+    	
+    	public boolean hasRatio() {
+    		return height != null || width != null;
+    	}
+    	
+    	public int getHeight() {
+    		if (height != null) {
+    			return height;
+    		}
+    		return Math.round(((float) image.getHeight() / image.getWidth()) * width);
+    	}
+    	
+    	public int getWidth() {
+    		if (width != null) {
+    			return width;
+    		}
+    		return Math.round(((float) image.getHeight() / image.getWidth()) * height);
+    	}
     }
     
 	public enum ImageMetadataKeys {
