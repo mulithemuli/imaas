@@ -4,10 +4,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URL;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -15,6 +14,7 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.io.IOUtils;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -121,30 +121,32 @@ public class ImaasApplication {
 			@RequestParam(name = "height", required = false) Integer height,
 			@RequestParam(name = "width", required = false) Integer width,
 			@RequestParam(name = "fit_to", required = false) String fitTo) {
-		Path path = Paths.get(imagePath);
-		if (!Files.exists(path)) {
-			throw new NotFoundException();
-		}
-		try {
-			byte[] image = Files.readAllBytes(path);
-			TransformedImage transformedImage = transform(image, height, width, fitTo);
-			return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.parseMediaType(transformedImage.getMediaType())).body(transformedImage.getImage());
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		byte[] image = readFromUrl(imagePath);
+		TransformedImage transformedImage = transform(image, height, width, fitTo);
+		Base64.getEncoder().encodeToString(image);
+		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.parseMediaType(transformedImage.getMediaType())).body(transformedImage.getImage());
+	}
+	
+	@RequestMapping(path = "transform", method = RequestMethod.GET, produces = "application/json")
+	public TransformedImage transformFromPathAsJson(@RequestParam("imagePath") String imagePath,
+			@RequestParam(name = "height", required = false) Integer height,
+			@RequestParam(name = "width", required = false) Integer width,
+			@RequestParam(name = "fit_to", required = false) String fitTo) {
+		ResponseEntity<byte[]> image = transformFromPath(imagePath, height, width, fitTo);
+		return new TransformedImage(image.getBody(), image.getHeaders().getContentType().getType(), 0, 0);
 	}
 	
 	@RequestMapping(path = "metadata", method = RequestMethod.GET)
 	public List<ImageExif> extractMetadata(@RequestParam("imagePath") String imagePath) {
-		Path path = Paths.get(imagePath);
-		if (!Files.exists(path)) {
-			throw new NotFoundException();
-		}
+		return extractMetadata(readFromUrl(imagePath));
+	}
+	
+	private byte[] readFromUrl(String resource) {
 		try {
-			byte[] image = Files.readAllBytes(path);
-			return extractMetadata(image);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+			URL url = new URL(resource);
+			return IOUtils.toByteArray(url.openStream());
+		} catch (Exception e) {
+			throw new NotFoundException();
 		}
 	}
 	

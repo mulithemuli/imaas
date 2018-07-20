@@ -42,21 +42,24 @@
 	});
 	
 	let withFilePost = (method, done, parameters) => {
-		let file;
 		if (mode === 'upload') {
-			file = fileUpload;
+			if (!fileUpload) {
+				return;
+			}
+			$.post({
+				url: method,
+				data: fileUpload,
+			    processData: false,
+			    contentType: false,
+			}).done(done);
 		} else if (mode === 'url') {
 			// read from URL ...
+			$.get({
+				url: method,
+				data: { imagePath: imageUrlInput.val() },
+				dataType: 'json'
+			}).done(done);
 		}
-		if (!file) {
-			return;
-		}
-		$.post({
-			url: method,
-			data: file,
-		    processData: false,
-		    contentType: false,
-		}).done(done);
 	}
 	
 	$(document.getElementById('transform_image')).on('click', () => {
