@@ -6,8 +6,42 @@
 	let transformedImageModal = $(document.getElementById('transformed_image_dialog'));
 	let exifDataBody = $(document.getElementById('exif_data_body'));
 	let transformedImage = $(document.getElementById('transformed_image'));
+	let height = $(document.getElementById('height'));
+	let width = $(document.getElementById('width'));
+	let fitTo = $(document.getElementById('fit_to'));
 
-	let mode = 'upload';
+	let settings = {
+			get mode() {
+				return localStorage.getItem('mode') || 'upload';
+			},
+			set mode(mode) {
+				localStorage.setItem('mode', mode);
+			},
+			get lastUsedUrl() {
+				return localStorage.getItem('last_used_url') || '';
+			},
+			set lastUsedUrl(lastUsedUrl) {
+				localStorage.setItem('last_used_url', lastUsedUrl);
+			},
+			get height() {
+				return localStorage.getItem('height') || '';
+			},
+			set height(height) {
+				localStorage.setItem('height', height);
+			},
+			get width() {
+				return localStorage.getItem('width') || '';
+			},
+			set width(width) {
+				localStorage.setItem('width', width);
+			},
+			get fitTo() {
+				return localStorage.getItem('fit_to') || '';
+			},
+			set fitTo(fitTo) {
+				localStorage.setItem('fit_to', fitTo);
+			}
+	}
 	
 	let getFilename = (url) => {
 		if (url) {
@@ -27,12 +61,12 @@
 			fileUpload = null;
 			imageFileLabel.text('Choose image');
 			imageFileInput.val('');
-			mode = 'url';
+			settings.mode = 'url';
 			break;
 		case 'image_type_file':
 			imageUrlInput.addClass('d-none');
 			imageFileInput.parent().removeClass('d-none');
-			mode = 'upload';
+			settings.mode = 'upload';
 			break;
 		default:
 			// nothing
@@ -54,10 +88,14 @@
 		}
 	});
 	
+	imageUrlInput.on('change', (e) => {
+		settings.lastUsedUrl = e.target.value;
+	});
+	
 	let withFilePost = (method, done, parameters) => {
 		imageFileInput.removeClass('is-invalid');
 		imageUrlInput.removeClass('is-invalid');
-		if (mode === 'upload') {
+		if (settings.mode === 'upload') {
 			if (!fileUpload) {
 				return;
 			}
@@ -70,7 +108,7 @@
 			    	imageFileInput.addClass('is-invalid');
 			    }
 			}).done(done);
-		} else if (mode === 'url') {
+		} else if (settings.mode === 'url') {
 			filename = getFilename(imageUrlInput.val());
 			$.get({
 				url: method,
@@ -83,14 +121,16 @@
 		}
 	}
 	
-	$(document.getElementById('transform_image')).on('click', () => {
+	$(document.getElementById('transform_image')).on('click', (e) => {
+		e.preventDefault();
 		withFilePost('transform?' + $('#height, #width, #fit_to').serialize(), (data) => {
 			transformedImage.html(templates.transformedImage($.extend(data, {name: filename})));
 			transformedImageModal.modal('show');
 		});
 	});
 	
-	$(document.getElementById('read_exif')).on('click', () => {
+	$(document.getElementById('read_exif')).on('click', (e) => {
+		e.preventDefault();
 		withFilePost('metadata', (data) => {
 			exifDataBody.children().remove();
 			$.each(data, (i, exif) => {
@@ -99,6 +139,32 @@
 			exifModal.modal('show');
 		});
 	});
+	
+	height.on('change', (e) => {
+		settings.height = e.currentTarget.value;
+	});
+	
+	width.on('change', (e) => {
+		settings.width = e.currentTarget.value;
+	});
+	
+	fitTo.on('change', (e) => {
+		settings.fitTo = e.currentTarget.value;
+	});
+	
+	switch(settings.mode) {
+	case 'url':
+		$(document.getElementById('image_type_url')).trigger('click');
+		break;
+	case 'upload':
+	default:
+		$(document.getElementById('image_type_file')).trigger('click');
+	}
+	
+	imageUrlInput.val(settings.lastUsedUrl);
+	height.val(settings.height);
+	width.val(settings.width);
+	fitTo.val(settings.fitTo);
 	
 	let templates = {
 			exifRow: _.template('<tr><td><%-name%></td><td><%-value%></td></tr>'),
