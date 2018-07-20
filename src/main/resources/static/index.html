@@ -54,8 +54,7 @@
 						<div class="form-group col-md">
 							<label for="fit_to">Fit to</label>
 							<select class="form-control" id="fit_to" name="fit_to">
-								<option></option>
-								<option value="FIT_TO_HEIGHT">height</option>
+								<option value="FIT_TO_HEIGHT" selected>height</option>
 								<option value="FIT_TO_WIDTH">width</option>
 								<option value="AUTOMATIC">auto</option>
 								<option value="FIT_EXACT">exact</option>
@@ -63,10 +62,20 @@
 						</div>
 					</div>
 					<div class="row">
-						<div class="col-md-12">
-							<div class="btn-group" role="group" aria-label="Basic example">
+						<div class="col-md-6 mb-3">
+							<div class="btn-group float-md-left" role="group" aria-label="Basic example">
 								<button class="btn btn-secondary w-100" type="submit" id="transform_image">Transform</button>
 								<button class="btn btn-secondary w-100" type="submit" id="read_exif">Read EXIF data</button>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="dropdown float-md-right">
+								<button class="btn btn-secondary dropdown-toggle" type="button" id="presets" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									Presets
+								</button>
+								<div class="dropdown-menu" aria-labelledby="presets" id="presets_selection">
+									<a class="dropdown-item" href="#" id="save_preset">Save preset</a>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -120,6 +129,7 @@
 		<script src="resources/jquery/jquery-3.3.1.min.js" integrity="sha256-0wthFPuUlq5GsqjN9ZN5yP/blXU0vR3XPmJsfGHH5n0=" crossorigin="anonymous"></script>
 		<script src="resources/bootstrap/js/bootstrap.bundle.min.js" integrity="sha256-ko+X8xDY92jF49Uh47HOLP8Vb5zGDF0J+tdy9KLEP1I=" crossorigin="anonymous"></script>
 		<script src="resources/underscore/underscore.min.js" integrity="sha256-ldPneVWc/ZsUpCj8aPpyM4yZLsFeELmrPz6lLjnuLVQ=" crossorigin="anonymous"></script>
+		<script src="resources/moment/moment.min.js" integrity="sha256-CutOzxCRucUsn6C6TcEYsauvvYilEniTXldPa6/wu0k=" crossorigin="anonymous"></script>
 		<script src="resources/js/imaas.js"></script>
 	</body>
 </html>
