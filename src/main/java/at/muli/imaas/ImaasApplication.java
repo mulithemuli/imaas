@@ -133,7 +133,7 @@ public class ImaasApplication {
 			@RequestParam(name = "width", required = false) Integer width,
 			@RequestParam(name = "fit_to", required = false) String fitTo) {
 		ResponseEntity<byte[]> image = transformFromPath(imagePath, height, width, fitTo);
-		return new TransformedImage(image.getBody(), image.getHeaders().getContentType().getType(), 0, 0);
+		return new TransformedImage(image.getBody(), image.getHeaders().getContentType().toString(), 0, 0);
 	}
 	
 	@RequestMapping(path = "metadata", method = RequestMethod.GET)
