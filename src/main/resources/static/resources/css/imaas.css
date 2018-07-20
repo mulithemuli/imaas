@@ -16,6 +16,10 @@
 	max-width: 100%;
 }
 
+.invalid-feedback {
+	margin-bottom: -3rem;
+}
+
 /*
  * Globals
  */

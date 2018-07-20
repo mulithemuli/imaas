@@ -42,6 +42,8 @@
 	});
 	
 	let withFilePost = (method, done, parameters) => {
+		imageFileInput.removeClass('is-invalid');
+		imageUrlInput.removeClass('is-invalid');
 		if (mode === 'upload') {
 			if (!fileUpload) {
 				return;
@@ -51,13 +53,19 @@
 				data: fileUpload,
 			    processData: false,
 			    contentType: false,
+			    error: () => {
+			    	imageFileInput.addClass('is-invalid');
+			    }
 			}).done(done);
 		} else if (mode === 'url') {
 			// read from URL ...
 			$.get({
 				url: method,
 				data: { imagePath: imageUrlInput.val() },
-				dataType: 'json'
+				dataType: 'json',
+				error: () => {
+					imageUrlInput.addClass('is-invalid');
+				}
 			}).done(done);
 		}
 	}
