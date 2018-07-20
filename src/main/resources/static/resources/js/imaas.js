@@ -234,6 +234,8 @@
 			$.each(settings.presets, (k, v) => {
 				v.fitToText = fitToMap[v.fitTo];
 				v.used = v.used || '';
+				v.height = v.height || '0';
+				v.width = v.width || '0';
 				let lastUsed = 'Used ';
 				if (v.used) {
 					lastUsed += moment(v.used).fromNow();
