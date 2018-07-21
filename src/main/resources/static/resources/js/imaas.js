@@ -233,16 +233,16 @@
 			presetsSelection.append('<div class="dropdown-divider"></div>');
 			$.each(settings.presets, (k, v) => {
 				v.fitToText = fitToMap[v.fitTo];
-				v.used = v.used || '';
-				v.height = v.height || '0';
-				v.width = v.width || '0';
 				let lastUsed = 'Used ';
 				if (v.used) {
 					lastUsed += moment(v.used).fromNow();
 				} else {
 					lastUsed += 'never';
 				}
-				let presetSelection = $(templates.preset(v));
+				let vView = $.extend({}, v);
+				vView.height = vView.height || 'n/a';
+				vView.width = vView.width || 'n/a';
+				let presetSelection = $(templates.preset(vView));
 				$('a.use', presetSelection).hover(() => {
 					height.val(v.height);
 					width.val(v.width);
