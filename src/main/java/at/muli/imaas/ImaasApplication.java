@@ -286,7 +286,7 @@ public class ImaasApplication {
     		if (width != null) {
     			return width;
     		}
-    		return Math.round(((float) image.getHeight() / image.getWidth()) * height);
+    		return Math.round(((float) image.getWidth() / image.getHeight()) * height);
     	}
     }
     
