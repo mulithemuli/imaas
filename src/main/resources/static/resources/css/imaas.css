@@ -26,6 +26,14 @@
 	border-bottom: none;
 }
 
+#api_dialog {
+	text-align: left !important;
+}
+
+#api_dialog th,
+#api_dialog dt {
+	text-align: right !important;
+}
 /*
  * Globals
  */

@@ -41,7 +41,7 @@
 								<input type="file" class="custom-file-input" id="image_file">
 								<label class="custom-file-label" for="image_file">Choose image</label>
 							</div>
-							<div class="invalid-feedback">There was a problem reading that image</div>
+							<div class="invalid-feedback" id="error_detail">There was a problem reading that image</div>
 						</div>
 					</div>
 					<div class="form-row">
@@ -83,7 +83,13 @@
 					</div>
 				</form>
 			</main>
-			<footer class="mastfoot mt-auto"></footer>
+			<footer class="mastfoot mt-auto">
+				<div class="inner">
+					<p>
+						Multiple image processing? Try the <a href="#api_dialog" data-toggle="modal" data-target="#api_dialog">API</a>.
+					</p>
+				</div>
+			</footer>
 		</div>
 		<div class="modal fade" id="transformed_image_dialog" tabindex="-1" role="dialog" aria-labelledby="transformed_image_dialog_title" aria-hidden="true">
 			<div class="modal-dialog modal-dialog-centered" role="document">
@@ -121,6 +127,118 @@
 							</thead>
 							<tbody id="exif_data_body"></tbody>
 						</table>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="api_dialog" tabindex="-1" role="dialog" aria-labelledby="api_dialog_title" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="api_dialog_title">API</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<h6>Transform</h6>
+						<p>
+							Transforms an image and rotates it according to the stored rotation metadata. All parameters except the image itself are optional. With no
+							parameters given, the image still will be rotated.
+						</p>
+						<div class="table-responsive-md">
+						<table class="table table-sm">
+							<tbody>
+								<tr>
+									<th scope="row">URL</th>
+									<td>/transform?width=:width&amp;height=:height&amp;fit_to=:fit_to</td>
+								</tr>
+								<tr>
+									<th scope="row">Method</th>
+									<td>POST</td>
+								</tr>
+								<tr>
+									<th scope="row">URL&nbsp;Parameters</th>
+									<td>
+										<table class="table table-borderless">
+											<tbody>
+												<tr>
+													<th scope="row">width</th>
+													<td><em>optional</em>, the target width</td>
+												</tr>
+												<tr>
+													<th scope="row">height</th>
+													<td><em>optional</em>, the target height</td>
+												</tr>
+												<tr>
+													<th scope="row">fit_to</th>
+													<td><em>optional</em>, stick to the height, width or exact. Enumerated: FIT_TO_HEIGHT (default if not given), FIT_TO_WIDTH, AUTOMATIC, EXACT</td>
+												</tr>
+											</tbody>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">Data&nbsp;(request&nbsp;body)</th>
+									<td>The image as byte array</td>
+								</tr>
+								<tr>
+									<th scope="row">Success&nbsp;response</th>
+									<td>
+										<table class="table table-borderless">
+											<tbody>
+												<tr>
+													<th scope="row">Code</th>
+													<td>200</td>
+												</tr>
+												<tr>
+													<th scope="row">Content</th>
+													<td>
+														<pre>
+{
+	height: &lt;new height of the image&gt;,
+	image: &lt;base64 encoded image&gt;,
+	mediaType: &lt;media type of the new image&gt;
+	width: &lt;new width of the image&gt;
+}</pre>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">Error&nbsp;response</th>
+									<td>
+										<table class="table table-borderless">
+											<tbody>
+												<tr>
+													<th scope="row">Code</th>
+													<td>415</td>
+												</tr>
+												<tr>
+													<th scope="row">Content</th>
+													<td>
+														<pre>
+{
+	error: "Unsupported Media Type",
+	message: &lt;error description&gt;,
+	path: "/transform",
+	status: 415,
+	timestamp: &lt;timestamp of occurrence&gt;
+}</pre>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						</div>
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

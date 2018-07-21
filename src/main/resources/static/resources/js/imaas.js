@@ -10,6 +10,7 @@
 	let width = $(document.getElementById('width'));
 	let fitTo = $(document.getElementById('fit_to'));
 	let presetsSelection = $(document.getElementById('presets_selection'));
+	let errorDetail = $(document.getElementById('error_detail'));
 
 	let settings = {
 			get mode() {
@@ -61,6 +62,8 @@
 	}
 	
 	$('input[name=image_type]').on('change', (e) => {
+		imageFileInput.removeClass('is-invalid');
+		imageUrlInput.removeClass('is-invalid');
 		switch (e.currentTarget.id) {
 		case 'image_type_url':
 			imageUrlInput.removeClass('d-none');
@@ -111,8 +114,10 @@
 				data: fileUpload,
 			    processData: false,
 			    contentType: false,
-			    error: () => {
+			    error: (r) => {
 			    	imageFileInput.addClass('is-invalid');
+			    	imageUrlInput.addClass('is-invalid');
+			    	errorDetail.text(r.responseJSON.message);
 			    }
 			}).done(done);
 		} else if (settings.mode === 'url') {
@@ -121,8 +126,9 @@
 				url: method,
 				data: { imagePath: imageUrlInput.val() },
 				dataType: 'json',
-				error: () => {
+				error: (r) => {
 					imageUrlInput.addClass('is-invalid');
+					errorDetail.text(r.responseJSON.message);
 				}
 			}).done(done);
 		}

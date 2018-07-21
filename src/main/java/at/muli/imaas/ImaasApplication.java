@@ -387,9 +387,15 @@ public class ImaasApplication {
 		private static final long serialVersionUID = 1L;
 	}
 	
-	@ResponseStatus(value = HttpStatus.UNSUPPORTED_MEDIA_TYPE, reason = "the requested media type is not supported")
+	@ResponseStatus(value = HttpStatus.UNSUPPORTED_MEDIA_TYPE)
 	public static class MediaTypeNotSupportedException extends RuntimeException {
 
 		private static final long serialVersionUID = 1L;
+		
+		private static final String SUPPORTED_IMAGE_TYPES_ERROR = "the requested media type is not supported (supported: " + SUPPORTED_IMAGE_TYPES.keySet() + ")";
+		
+		public MediaTypeNotSupportedException() {
+			super(SUPPORTED_IMAGE_TYPES_ERROR);
+		}
 	}
 }
