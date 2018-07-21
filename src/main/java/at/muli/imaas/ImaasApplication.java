@@ -129,7 +129,7 @@ public class ImaasApplication {
 	}
 	
 	@RequestMapping(path = "transform", method = RequestMethod.GET)
-	public ResponseEntity<byte[]> transformFromPath(@RequestParam("imagePath") String imagePath,
+	public ResponseEntity<byte[]> transformFromPath(@RequestParam("image_path") String imagePath,
 			@RequestParam(name = "height", required = false) Integer height,
 			@RequestParam(name = "width", required = false) Integer width,
 			@RequestParam(name = "fit_to", required = false) String fitTo) {
@@ -140,7 +140,7 @@ public class ImaasApplication {
 	}
 	
 	@RequestMapping(path = "transform", method = RequestMethod.GET, produces = "application/json")
-	public TransformedImage transformFromPathAsJson(@RequestParam("imagePath") String imagePath,
+	public TransformedImage transformFromPathAsJson(@RequestParam("image_path") String imagePath,
 			@RequestParam(name = "height", required = false) Integer height,
 			@RequestParam(name = "width", required = false) Integer width,
 			@RequestParam(name = "fit_to", required = false) String fitTo) {
@@ -149,7 +149,7 @@ public class ImaasApplication {
 	}
 	
 	@RequestMapping(path = "metadata", method = RequestMethod.GET)
-	public List<ImageExif> extractMetadata(@RequestParam("imagePath") String imagePath) {
+	public List<ImageExif> extractMetadata(@RequestParam("image_path") String imagePath) {
 		return extractMetadata(readFromUrl(imagePath));
 	}
 	

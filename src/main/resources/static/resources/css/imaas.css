@@ -34,6 +34,10 @@
 #api_dialog dt {
 	text-align: right !important;
 }
+
+#api_dialog a {
+	color: #666;
+}
 /*
  * Globals
  */

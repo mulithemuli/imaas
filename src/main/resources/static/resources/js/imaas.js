@@ -124,7 +124,7 @@
 			filename = getFilename(imageUrlInput.val());
 			$.get({
 				url: method,
-				data: { imagePath: imageUrlInput.val() },
+				data: { image_path: imageUrlInput.val() },
 				dataType: 'json',
 				error: (r) => {
 					imageUrlInput.addClass('is-invalid');

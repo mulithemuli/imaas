@@ -135,7 +135,7 @@
 			</div>
 		</div>
 		<div class="modal fade" id="api_dialog" tabindex="-1" role="dialog" aria-labelledby="api_dialog_title" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+			<div class="modal-dialog modal-lg" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
 						<h5 class="modal-title" id="api_dialog_title">API</h5>
@@ -144,85 +144,115 @@
 						</button>
 					</div>
 					<div class="modal-body">
-						<h6>Transform</h6>
-						<p>
-							Transforms an image and rotates it according to the stored rotation metadata. All parameters except the image itself are optional. With no
-							parameters given, the image still will be rotated.
-						</p>
-						<div class="table-responsive-md">
-						<table class="table table-sm">
-							<tbody>
-								<tr>
-									<th scope="row">URL</th>
-									<td>/transform?width=:width&amp;height=:height&amp;fit_to=:fit_to</td>
-								</tr>
-								<tr>
-									<th scope="row">Method</th>
-									<td>POST</td>
-								</tr>
-								<tr>
-									<th scope="row">URL&nbsp;Parameters</th>
-									<td>
-										<table class="table table-borderless">
-											<tbody>
-												<tr>
-													<th scope="row">width</th>
-													<td><em>optional</em>, the target width</td>
-												</tr>
-												<tr>
-													<th scope="row">height</th>
-													<td><em>optional</em>, the target height</td>
-												</tr>
-												<tr>
-													<th scope="row">fit_to</th>
-													<td><em>optional</em>, stick to the height, width or exact. Enumerated: FIT_TO_HEIGHT (default if not given), FIT_TO_WIDTH, AUTOMATIC, EXACT</td>
-												</tr>
-											</tbody>
-										</table>
-									</td>
-								</tr>
-								<tr>
-									<th scope="row">Data&nbsp;(request&nbsp;body)</th>
-									<td>The image as byte array</td>
-								</tr>
-								<tr>
-									<th scope="row">Success&nbsp;response</th>
-									<td>
-										<table class="table table-borderless">
-											<tbody>
-												<tr>
-													<th scope="row">Code</th>
-													<td>200</td>
-												</tr>
-												<tr>
-													<th scope="row">Content</th>
-													<td>
-														<pre>
+						<nav>
+							<div class="nav nav-tabs" id="nav-tab" role="tablist">
+								<a class="nav-item nav-link active" id="api_transform_tab" data-toggle="tab" href="#api_transform" role="tab" aria-controls="api_transform" aria-selected="true">Transform</a>
+								<a class="nav-item nav-link" id="api_metadata_tab" data-toggle="tab" href="#api_metadata" role="tab" aria-controls="api_metadata" aria-selected="false">Metadata</a>
+							</div>
+						</nav>
+						<div class="tab-content">
+							<div class="tab-pane fade show active" id="api_transform" role="tabpanel" aria-labelledby="api_transform_tab">
+								<p>
+									Transforms an image and rotates it according to the stored rotation metadata. All parameters except the image itself are optional. With no
+									parameters given, the image still will be rotated.
+								</p>
+								<div class="table-responsive-md">
+									<table class="table table-sm">
+										<tbody>
+											<tr>
+												<th scope="row">URL</th>
+												<td>/transform?width=:width&amp;height=:height&amp;fit_to=:fit_to&amp;image_path</td>
+											</tr>
+											<tr>
+												<th scope="row">Method</th>
+												<td>POST | GET</td>
+											</tr>
+											<tr>
+												<th scope="row">URL&nbsp;Parameters</th>
+												<td>
+													<table class="table table-borderless">
+														<tbody>
+															<tr>
+																<th scope="row">width</th>
+																<td><em>optional</em>, the target width</td>
+															</tr>
+															<tr>
+																<th scope="row">height</th>
+																<td><em>optional</em>, the target height</td>
+															</tr>
+															<tr>
+																<th scope="row">fit_to</th>
+																<td><em>optional</em>, stick to the height, width or exact. Enumerated: FIT_TO_HEIGHT (default if not given), FIT_TO_WIDTH, AUTOMATIC, EXACT</td>
+															</tr>
+															<tr>
+																<th scope="row">image_path</th>
+																<td><em>Required when requested by GET</em>. The URL of the image to transform.</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+											<tr>
+												<th scope="row">Data&nbsp;(request&nbsp;body)</th>
+												<td>The image as byte array, <em>only used for POST requests</em></td>
+											</tr>
+											<tr>
+												<th scope="row">Success&nbsp;response</th>
+												<td>
+													<table class="table table-borderless">
+														<tbody>
+															<tr>
+																<th scope="row">Code</th>
+																<td>200</td>
+															</tr>
+															<tr>
+																<th scope="row">Content</th>
+																<td>
+																	When used with POST or GET with accept <code>application/json</code>:
+																	<pre>
 {
 	height: &lt;new height of the image&gt;,
 	image: &lt;base64 encoded image&gt;,
 	mediaType: &lt;media type of the new image&gt;
 	width: &lt;new width of the image&gt;
 }</pre>
-													</td>
-												</tr>
-											</tbody>
-										</table>
-									</td>
-								</tr>
-								<tr>
-									<th scope="row">Error&nbsp;response</th>
-									<td>
-										<table class="table table-borderless">
-											<tbody>
-												<tr>
-													<th scope="row">Code</th>
-													<td>415</td>
-												</tr>
-												<tr>
-													<th scope="row">Content</th>
-													<td>
-														<pre>
+																	The (binary) image when requested with GET.
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+											<tr>
+												<th scope="row">Error&nbsp;response</th>
+												<td>
+													<table class="table table-borderless">
+														<tbody>
+															<tr>
+																<th scope="row">Code</th>
+																<td>404</td>
+															</tr>
+															<tr>
+																<th scope="row">Content</th>
+																<td>
+																	<pre>
+{
+	error: "Not Found",
+	message: &lt;error description&gt;,
+	path: "/transform",
+	status: 404,
+	timestamp: &lt;timestamp of occurrence&gt;
+}</pre>
+																</td>
+															</tr>
+															<tr>
+																<th scope="row">Code</th>
+																<td>415</td>
+															</tr>
+															<tr>
+																<th scope="row">Content</th>
+																<td>
+																	<pre>
 {
 	error: "Unsupported Media Type",
 	message: &lt;error description&gt;,
@@ -230,14 +260,128 @@
 	status: 415,
 	timestamp: &lt;timestamp of occurrence&gt;
 }</pre>
-													</td>
-												</tr>
-											</tbody>
-										</table>
-									</td>
-								</tr>
-							</tbody>
-						</table>
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+							<div class="tab-pane fade" id="api_metadata" role="tabpanel" aria-labelledby="api_metadata_tab">
+								<p>
+									Reads specific metadata of the given image.
+								</p>
+								<div class="table-responsive-md">
+									<table class="table table-sm">
+										<tbody>
+											<tr>
+												<th scope="row">URL</th>
+												<td>/metadata</td>
+											</tr>
+											<tr>
+												<th scope="row">Method</th>
+												<td>POST | GET</td>
+											</tr>
+											<tr>
+												<th scope="row">URL&nbsp;Parameters</th>
+												<td>
+													<table class="table table-borderless">
+														<tbody>
+															<tr>
+																<th scope="row">image_path</th>
+																<td><em>Required when requested by GET</em>. The URL of the image to transform.</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+											<tr>
+												<th scope="row">Data&nbsp;(request&nbsp;body)</th>
+												<td>The image as byte array, <em>only used for POST requests</em></td>
+											</tr>
+											<tr>
+												<th scope="row">Success&nbsp;response</th>
+												<td>
+													<table class="table table-borderless">
+														<tbody>
+															<tr>
+																<th scope="row">Code</th>
+																<td>200</td>
+															</tr>
+															<tr>
+																<th scope="row">Content</th>
+																<td>
+																	<pre>
+[
+	{
+		name: "Taken",
+		value: &lt;timestamp the image has been taken&gt;
+	},
+	{
+		name: "Make",
+		value: &lt;the maker of the camera&gt;
+	},
+	{
+		name: "Model",
+		value: &lt;the camera model&gt;
+	}
+]</pre>
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+											<tr>
+												<th scope="row">Error&nbsp;response</th>
+												<td>
+													<table class="table table-borderless">
+														<tbody>
+															<tr>
+																<th scope="row">Code</th>
+																<td>404</td>
+															</tr>
+															<tr>
+																<th scope="row">Content</th>
+																<td>
+																	<pre>
+{
+	error: "Not Found",
+	message: &lt;error description&gt;,
+	path: "/transform",
+	status: 404,
+	timestamp: &lt;timestamp of occurrence&gt;
+}</pre>
+																</td>
+															</tr>
+															<tr>
+																<th scope="row">Code</th>
+																<td>415</td>
+															</tr>
+															<tr>
+																<th scope="row">Content</th>
+																<td>
+																	<pre>
+{
+	error: "Unsupported Media Type",
+	message: &lt;error description&gt;,
+	path: "/transform",
+	status: 415,
+	timestamp: &lt;timestamp of occurrence&gt;
+}</pre>
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
 						</div>
 					</div>
 					<div class="modal-footer">
