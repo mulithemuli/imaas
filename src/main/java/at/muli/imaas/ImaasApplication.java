@@ -1,10 +1,13 @@
 package at.muli.imaas;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -21,9 +24,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +50,7 @@ import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.google.common.collect.ImmutableMap;
 
-import at.muli.imaas.ImaasApplication.ContentDetectorClient.ContentType;
+import at.muli.imaas.ImaasApplication.ContentDetector.ContentType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -65,7 +72,7 @@ public class ImaasApplication {
 	private Collection<String> supportedProtocols;
 	
 	@Autowired
-	private ContentDetectorClient contentDetectorClient;
+	private ContentDetector contentDetector;
 	
     public static void main(String[] args) {
 		SpringApplication.run(ImaasApplication.class, args);
@@ -158,17 +165,56 @@ public class ImaasApplication {
 		}
 	}
 	
-    @FeignClient(value = "ContentDetectionService")
-    public static interface ContentDetectorClient {
-    	
-    	@RequestMapping(value = "/content", method = RequestMethod.POST)
-    	ContentType getContentType(byte[] data);
+	@Bean
+	@Primary
+	@ConditionalOnProperty(name = "eureka.client.enabled", matchIfMissing = true)
+	public ContentDetector contentDetectorFeign() {
+		return new ContentDetectorFeign();
+	}
+	
+	@Bean
+	@ConditionalOnMissingBean(ContentDetector.class)
+	public ContentDetector contentDetectorLocal() {
+		return b -> {
+			log.info("using content detection fallback");
+    		try (InputStream is = new BufferedInputStream(new ByteArrayInputStream(b))) {
+    			String mimeType = URLConnection.guessContentTypeFromStream(is);
+    			ContentType contentType = new ContentType();
+    			contentType.mediaType = mimeType;
+    			return contentType;
+    		} catch (IOException e) {
+    			throw new RuntimeException(e);
+    		}
+		};
+	}
+	
+	public static interface ContentDetector {
+		
+		ContentType getContentType(byte[] data);
     	
     	@Getter
     	public static class ContentType {
     		private String mediaType;
     	}
-    }
+	}
+	
+	public static class ContentDetectorFeign implements ContentDetector {
+		
+		@Autowired
+		private ContentDetectorClient contentDetectorClient;
+		
+		@Override
+		public ContentType getContentType(byte[] data) {
+			return contentDetectorClient.getContentType(data);
+		}
+		
+		@FeignClient(value = "ContentDetectionService")
+		private interface ContentDetectorClient {
+			
+			@RequestMapping(value = "/content", method = RequestMethod.POST)
+			ContentType getContentType(byte[] data);
+		}
+	}
     
 	/**
 	 * Extracts the {@link Metadata} information and content type from the given image.
@@ -178,7 +224,7 @@ public class ImaasApplication {
 	 * @throws MediaTypeNotSupportedException when the content type of the image is not in {@link #SUPPORTED_IMAGE_TYPES}.
 	 */
 	private ImageMetadata readMetadata(byte[] image) throws MediaTypeNotSupportedException {
-		ContentType contentType = contentDetectorClient.getContentType(image);
+		ContentType contentType = contentDetector.getContentType(image);
 		if (!SUPPORTED_IMAGE_TYPES.containsKey(contentType.getMediaType())) {
 			throw new MediaTypeNotSupportedException();
 		}
