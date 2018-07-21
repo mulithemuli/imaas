@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -17,6 +18,7 @@ import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -58,6 +60,9 @@ public class ImaasApplication {
 			.put("image/jpeg", "JPG")
 			.put("image/png", "PNG")
 			.build();
+	
+	@Value("#{'${imaas.supportedProtocols}'.split(',')}")
+	private Collection<String> supportedProtocols;
 	
 	@Autowired
 	private ContentDetectorClient contentDetectorClient;
@@ -144,6 +149,9 @@ public class ImaasApplication {
 	private byte[] readFromUrl(String resource) {
 		try {
 			URL url = new URL(resource);
+			if (!supportedProtocols.contains(url.getProtocol())) {
+				throw new MediaTypeNotSupportedException();
+			}
 			return IOUtils.toByteArray(url.openStream());
 		} catch (Exception e) {
 			throw new NotFoundException();

@@ -1,0 +1,5 @@
+{"properties": [{
+  "name": "imaas.supportedProtocols",
+  "type": "java.lang.Collection",
+  "description": "Supported protocols for URL image retrieval. Use ',' as separator."
+}]}
