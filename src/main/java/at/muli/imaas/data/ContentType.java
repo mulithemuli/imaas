@@ -1,10 +1,8 @@
 package at.muli.imaas.data;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Builder
-@Value
+@Data
 public class ContentType {
 
     private String mediaType;
