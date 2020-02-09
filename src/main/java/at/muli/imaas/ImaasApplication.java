@@ -1,46 +1,7 @@
 package at.muli.imaas;
 
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import javax.imageio.ImageIO;
-
-import org.apache.commons.io.IOUtils;
-import org.imgscalr.Scalr;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.openfeign.EnableFeignClients;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-
+import at.muli.imaas.data.ContentType;
+import at.muli.imaas.service.ContentDetector;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
@@ -49,12 +10,31 @@ import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.google.common.collect.ImmutableMap;
-
-import at.muli.imaas.ImaasApplication.ContentDetector.ContentType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.IOUtils;
+import org.imgscalr.Scalr;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 @RestController
@@ -71,21 +51,24 @@ public class ImaasApplication {
 	@Value("#{'${imaas.supportedProtocols}'.split(',')}")
 	private Collection<String> supportedProtocols;
 	
-	@Autowired
 	private ContentDetector contentDetector;
 	
     public static void main(String[] args) {
 		SpringApplication.run(ImaasApplication.class, args);
 	}
+
+	public ImaasApplication(ContentDetector contentDetector) {
+    	this.contentDetector = contentDetector;
+	}
 	
 	/**
 	 * Turns the image to the right orientation and optionally performs transformations on it.
 	 * 
-	 * @param image
-	 * @param height
-	 * @param width
-	 * @param fitTo
-	 * @return
+	 * @param image the image to transform.
+	 * @param height the maximum height to which the image should be transformed.
+	 * @param width the maximum width to which the image should be transformed.
+	 * @param fitTo where the image should fit – height or width.
+	 * @return the image in the new dimensions and the rest of the sizes.
 	 */
 	@RequestMapping(path = "transform", method = RequestMethod.POST)
 	public TransformedImage transform(@RequestBody byte[] image,
@@ -120,7 +103,7 @@ public class ImaasApplication {
 		}
 	}
 	
-	@RequestMapping(path = "metadata", method = RequestMethod.POST)
+	@PostMapping(path = "metadata")
 	public List<ImageExif> extractMetadata(@RequestBody byte[] image) {
 		ImageMetadata imageMetadata = readMetadata(image);
 		return Arrays.asList(ImageMetadataKeys.values()).parallelStream()
@@ -128,7 +111,7 @@ public class ImaasApplication {
 				.collect(Collectors.toList());
 	}
 	
-	@RequestMapping(path = "transform", method = RequestMethod.GET)
+	@GetMapping(path = "transform")
 	public ResponseEntity<byte[]> transformFromPath(@RequestParam("image_path") String imagePath,
 			@RequestParam(name = "height", required = false) Integer height,
 			@RequestParam(name = "width", required = false) Integer width,
@@ -139,7 +122,7 @@ public class ImaasApplication {
 		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.parseMediaType(transformedImage.getMediaType())).body(transformedImage.getImage());
 	}
 	
-	@RequestMapping(path = "transform", method = RequestMethod.GET, produces = "application/json")
+	@GetMapping(path = "transform", produces = "application/json")
 	public TransformedImage transformFromPathAsJson(@RequestParam("image_path") String imagePath,
 			@RequestParam(name = "height", required = false) Integer height,
 			@RequestParam(name = "width", required = false) Integer width,
@@ -148,7 +131,7 @@ public class ImaasApplication {
 		return new TransformedImage(image.getBody(), image.getHeaders().getContentType().toString(), 0, 0);
 	}
 	
-	@RequestMapping(path = "metadata", method = RequestMethod.GET)
+	@GetMapping(path = "metadata")
 	public List<ImageExif> extractMetadata(@RequestParam("image_path") String imagePath) {
 		return extractMetadata(readFromUrl(imagePath));
 	}
@@ -164,63 +147,12 @@ public class ImaasApplication {
 			throw new NotFoundException();
 		}
 	}
-	
-	@Bean
-	@Primary
-	@ConditionalOnProperty(name = "eureka.client.enabled", matchIfMissing = true)
-	public ContentDetector contentDetectorFeign() {
-		return new ContentDetectorFeign();
-	}
-	
-	@Bean
-	@ConditionalOnMissingBean(ContentDetector.class)
-	public ContentDetector contentDetectorLocal() {
-		return b -> {
-			log.info("using content detection fallback");
-    		try (InputStream is = new BufferedInputStream(new ByteArrayInputStream(b))) {
-    			String mimeType = URLConnection.guessContentTypeFromStream(is);
-    			ContentType contentType = new ContentType();
-    			contentType.mediaType = mimeType;
-    			return contentType;
-    		} catch (IOException e) {
-    			throw new RuntimeException(e);
-    		}
-		};
-	}
-	
-	public static interface ContentDetector {
-		
-		ContentType getContentType(byte[] data);
-    	
-    	@Getter
-    	public static class ContentType {
-    		private String mediaType;
-    	}
-	}
-	
-	public static class ContentDetectorFeign implements ContentDetector {
-		
-		@Autowired
-		private ContentDetectorClient contentDetectorClient;
-		
-		@Override
-		public ContentType getContentType(byte[] data) {
-			return contentDetectorClient.getContentType(data);
-		}
-		
-		@FeignClient(value = "ContentDetectionService")
-		private interface ContentDetectorClient {
-			
-			@RequestMapping(value = "/content", method = RequestMethod.POST)
-			ContentType getContentType(byte[] data);
-		}
-	}
-    
+
 	/**
 	 * Extracts the {@link Metadata} information and content type from the given image.
 	 * 
-	 * @param image
-	 * @return
+	 * @param image the image where to get the metadata from.
+	 * @return the extracted metadata of the image.
 	 * @throws MediaTypeNotSupportedException when the content type of the image is not in {@link #SUPPORTED_IMAGE_TYPES}.
 	 */
 	private ImageMetadata readMetadata(byte[] image) throws MediaTypeNotSupportedException {
@@ -238,8 +170,7 @@ public class ImaasApplication {
 	private Scalr.Rotation[] calculateRotation(Metadata metadata) {
 		int orientation = readImageOrientation(metadata);
 		switch (orientation) {
-		case 1:
-			return new Scalr.Rotation[] {};
+		// case 1 ignored since it is the same as default
 		case 2:
 			return new Scalr.Rotation[] { Scalr.Rotation.FLIP_HORZ };
 		case 3:
@@ -271,7 +202,9 @@ public class ImaasApplication {
         try {
             return directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
         } catch (MetadataException me) {
-            log.warn(String.format("Could not get orientation for image"));
+        	if (log.isWarnEnabled()) {
+        		log.warn("Could not get orientation for image");
+			}
             return 1;
         }
     }
@@ -279,7 +212,7 @@ public class ImaasApplication {
     @AllArgsConstructor
     @NoArgsConstructor
     @Getter
-    public static class TransformedImage {
+	private static class TransformedImage {
     	
     	private byte[] image;
     	
@@ -292,7 +225,7 @@ public class ImaasApplication {
     
     @AllArgsConstructor
     @Getter
-    public static class ImageMetadata {
+	private static class ImageMetadata {
     	
     	private String contentType;
     	
@@ -301,7 +234,7 @@ public class ImaasApplication {
     
     @AllArgsConstructor
     @Getter
-    public static class ImageExif {
+	private static class ImageExif {
     	
     	private String name;
     	
@@ -317,7 +250,7 @@ public class ImaasApplication {
     	
     	private Integer width;
     	
-    	public boolean hasRatio() {
+    	boolean hasRatio() {
     		return height != null || width != null;
     	}
     	
@@ -338,17 +271,17 @@ public class ImaasApplication {
     
 	public enum ImageMetadataKeys {
 
-		DATETIME_TAKEN("Taken", m -> getMetadata(ExifSubIFDDirectory.class, m, d -> d.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL), r -> r.toInstant().toString())),
+		DATETIME_TAKEN("Taken", m -> getMetadata(m, d -> d.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL), r -> r.toInstant().toString())),
 
-		CAMERA_MAKE("Make", m -> getMetadata(ExifIFD0Directory.class, m, d -> d.getString(ExifIFD0Directory.TAG_MAKE))),
+		CAMERA_MAKE("Make", m -> getMetadata(m, d -> d.getString(ExifIFD0Directory.TAG_MAKE))),
 
-		CAMERA_MODEL("Model", m -> getMetadata(ExifIFD0Directory.class, m, d -> d.getString(ExifIFD0Directory.TAG_MODEL)));
+		CAMERA_MODEL("Model", m -> getMetadata(m, d -> d.getString(ExifIFD0Directory.TAG_MODEL)));
 
 		private String name;
 
 		private Function<Metadata, String> extractor;
 
-		private ImageMetadataKeys(String name, Function<Metadata, String> extractor) {
+		ImageMetadataKeys(String name, Function<Metadata, String> extractor) {
 			this.name = name;
 			this.extractor = extractor;
 		}
@@ -357,16 +290,12 @@ public class ImaasApplication {
 			return name;
 		}
 
-		public String extractMetadata(Metadata metadata) {
-			return extractor.apply(metadata);
+		private static String getMetadata(Metadata metadata, Function<ExifIFD0Directory, String> function) {
+			return getMetadata(metadata, function, null);
 		}
 
-		private static <T extends Directory> String getMetadata(Class<T> directoryClass, Metadata metadata, Function<T, String> function) {
-			return getMetadata(directoryClass, metadata, function, null);
-		}
-
-		private static <T extends Directory, R> String getMetadata(Class<T> directoryClass, Metadata metadata, Function<T, R> function, Function<R, String> toString) {
-			T directory = metadata.getFirstDirectoryOfType(directoryClass);
+		private static <R> String getMetadata(Metadata metadata, Function<ExifIFD0Directory, R> function, Function<R, String> toString) {
+			ExifIFD0Directory directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
 			if (directory == null) {
 				return null;
 			}
@@ -382,7 +311,7 @@ public class ImaasApplication {
 	}
 	
 	@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "the image cannot be found")
-	public static class NotFoundException extends RuntimeException {
+	private static class NotFoundException extends RuntimeException {
 
 		private static final long serialVersionUID = 1L;
 	}
@@ -394,8 +323,9 @@ public class ImaasApplication {
 		
 		private static final String SUPPORTED_IMAGE_TYPES_ERROR = "the requested media type is not supported (supported: " + SUPPORTED_IMAGE_TYPES.keySet() + ")";
 		
-		public MediaTypeNotSupportedException() {
+		MediaTypeNotSupportedException() {
 			super(SUPPORTED_IMAGE_TYPES_ERROR);
 		}
 	}
+
 }
